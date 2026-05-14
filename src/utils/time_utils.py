@@ -1,7 +1,7 @@
 import time
 
 
-def show_elapsed_time(start_time: float, name: str):
+def show_elapsed_time(start_time: float, name: str = "None"):
     end_time = time.perf_counter()
 
     elapsed_time = end_time - start_time

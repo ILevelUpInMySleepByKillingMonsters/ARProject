@@ -62,8 +62,18 @@ class ImageSegmenterProcessor:
         return cv2.bitwise_and(thresh, image)
 
     def get_segmentation(self, image):
-        self.set_buffer_if_none(image)
+        h, w, _ = image.shape
 
-        new_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
+        res_image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_NEAREST)
+        self.set_buffer_if_none(res_image)
+
+        new_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=res_image)
         thresh = self._generate_mask(new_image)
+        thresh = cv2.resize(thresh, (w, h), interpolation=cv2.INTER_LINEAR)
+
+        lower = (200, 200, 200)
+        upper = (255, 255, 255)
+        thresh = cv2.inRange(thresh, lower, upper)
+        thresh = cv2.cvtColor(thresh, cv2.COLOR_BGRA2BGR)
+
         return cv2.bitwise_and(thresh, image), cv2.bitwise_or(thresh, image)

@@ -10,7 +10,11 @@ image_segment_processor = ImageSegmenterProcessor()
 
 cap = cv2.VideoCapture(f"{DATA_DIR}/test-2.mp4")
 bg = cv2.imread(f"{DATA_DIR}/vitebsk.jpg")
-time_list = []
+
+one_frame_process_list = []
+get_segmentation_list = []
+process_background_list = []
+mask_image_list = []
 
 index = 0
 while cap.isOpened():
@@ -29,15 +33,19 @@ while cap.isOpened():
 
     start_segment_time = time.perf_counter()
     background, human = image_segment_processor.get_segmentation(frame)
-    time_utils.show_elapsed_time(start_segment_time, "get_segmentation")
+    elapsed_time = time_utils.show_elapsed_time(start_segment_time, "get_segmentation")
+    get_segmentation_list.append(elapsed_time)
 
     start_process_background_time = time.perf_counter()
+    
     background = image_utils.replace_no_white_background(human, new_bg)
-    time_utils.show_elapsed_time(start_process_background_time, "process_background")
+    elapsed_time = time_utils.show_elapsed_time(start_process_background_time, "process_background")
+    process_background_list.append(elapsed_time)
 
     start_mask_image_time = time.perf_counter()
     mask = image_mask_processor.mask_image(background)
-    time_utils.show_elapsed_time(start_mask_image_time, "mask_image")
+    elapsed_time = time_utils.show_elapsed_time(start_mask_image_time, "mask_image")
+    mask_image_list.append(elapsed_time)
 
     cv2.imshow("Mask", mask)
 
@@ -45,12 +53,18 @@ while cap.isOpened():
 
     print()
 
-    time_list.append(elapsed_time)
+    one_frame_process_list.append(elapsed_time)
 
     key = cv2.waitKey(1)
     if key == 27:
         break
 
-average = sum(time_list) / len(time_list)
+average_one_frame_process_list = sum(one_frame_process_list) / len(one_frame_process_list)
+average_get_segmentation_list = sum(get_segmentation_list) / len(get_segmentation_list)
+average_process_background_list = sum(process_background_list) / len(process_background_list)
+average_mask_image_list = sum(mask_image_list) / len(mask_image_list)
 
-print(f"avg one frame process - {average:.3f}, frame_rate: {1 / elapsed_time:.3f}")
+print(f"avg segment - {average_get_segmentation_list:.3f}, frame_rate: {1 / average_get_segmentation_list:.3f}")
+print(f"avg background - {average_process_background_list:.3f}, frame_rate: {1 / average_process_background_list:.3f}")
+print(f"avg mask - {average_mask_image_list:.3f}, frame_rate: {1 / average_mask_image_list:.3f}")
+print(f"avg one frame process - {average_one_frame_process_list:.3f}, frame_rate: {1 / average_one_frame_process_list:.3f}")

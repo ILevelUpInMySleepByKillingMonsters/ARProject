@@ -65,3 +65,10 @@ def replace_no_white_background(image, background):
     foreground = cv2.bitwise_and(image, image, mask=mask_inv)
     bg_cut = cv2.bitwise_and(background, background, mask=white_mask)
     return cv2.add(foreground, bg_cut)
+
+
+def replace_color_transparent(image, color=[255, 255, 255]):
+    img_copy = image.copy()
+    white_mask = np.all(img_copy[:, :, :3] == color, axis=-1)
+    img_copy[white_mask, 3] = 0
+    return img_copy

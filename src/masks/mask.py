@@ -1,61 +1,32 @@
 import cv2
-from .mask_config import MASK_CONFIGS
+from .mask_config import MASK_CONFIGS, MaskConfigData, PlacePivot
 import numpy as np
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from pathlib import Path
+from ..paths import MASKS_DIR
 from ..utils import image_utils
 
 
 class ImageMaskProcessor:
-    def __init__(self, mask_name="glasses", show_face_points=False):
+    def __init__(self, mask_name="test", show_face_points=False):
         mask = MASK_CONFIGS[mask_name]
 
-        BASE_DIR = Path(__file__).resolve().parent
+        loaded_mask = []
 
-        image_path = str(BASE_DIR / mask["file"])
-        if mask["animated"] == False:
-            mask_src = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-            mask_src = cv2.cvtColor(mask_src, cv2.COLOR_RGB2RGBA)
-            cv2.imshow("fd", mask_src)
-        else:
-            mask_src = cv2.VideoCapture(image_path)
-            _, frame = mask_src.read()
+        for mask_data in mask:
+            img = cv2.imread(str(MASKS_DIR / mask_data.file), cv2.IMREAD_UNCHANGED)
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+            loaded_mask.append(img)
 
-            mask_src = cv2.cvtColor(frame, cv2.COLOR_RGB2RGBA)
-            cv2.imshow("fd", mask_src)
-
-        self.m_image = mask_src
-        self.m_left = mask["left"]
-        self.m_right = mask["right"]
-        self.m_top = mask["top"]
-        self.m_bottom = mask["bottom"]
-        self.m_center = mask["center"]
-        self.m_scale_w = mask["scale_w"]
-        self.m_scale_h = mask["scale_h"]
-        self.m_start_point_x = mask["start_point_x"]
-        self.m_start_point_y = mask["start_point_y"]
-        self.m_rotate = mask["rotate"]
-        self.m_place_on_point = mask["place_on_point"]
-        self.m_native_size = mask["native_size"]
-
-        self.selected_points = [
-            self.m_left,
-            self.m_right,
-            self.m_top,
-            self.m_bottom,
-            self.m_center,
-        ]
-
+        self.loaded_mask = loaded_mask
+        self.mask = mask
         self.show_face_points = show_face_points
 
         self.detector = self._get_detector()
 
     def _get_detector(self):
-        BASE_DIR = Path(__file__).resolve().parent
-
-        asset_path = str(BASE_DIR / "face_landmarker.task")
+        asset_path = str(MASKS_DIR / "face_landmarker.task")
 
         base_options = python.BaseOptions(model_asset_path=asset_path)
         options = vision.FaceLandmarkerOptions(base_options=base_options)
@@ -95,14 +66,21 @@ class ImageMaskProcessor:
 
         return angle_deg
 
-    def _show_face_points(self, face_landmarks, image, w, h):
+    def _show_face_points(self, mask_data: MaskConfigData, face_landmarks, image, w, h):
         index = 0
+        selected_point = [
+            mask_data.left,
+            mask_data.right,
+            mask_data.bottom,
+            mask_data.top,
+            mask_data.center,
+        ]
         for landmark in face_landmarks:
-            if index not in self.selected_points:
+            if index not in selected_point:
                 index += 1
                 continue
 
-            coords = self.get_landmark_coords(landmark, w, h)
+            coords = self._get_landmark_coords(landmark, w, h)
             point = (int(coords[0]), int(coords[1]))
 
             cv2.circle(image, point, 2, (255, 0, 0), -1)
@@ -120,6 +98,8 @@ class ImageMaskProcessor:
     def _process_image(
         self,
         image,
+        mask_data: MaskConfigData,
+        mask_index,
         w,
         h,
         m_center,
@@ -131,36 +111,39 @@ class ImageMaskProcessor:
         new_mask_height,
     ):
         angle_deg = self._calculate_angle(m_left, m_right)
-        angle_deg = 0
         scale = 1
-        if self.m_native_size:
-            r_h, r_w, _ = self.m_image.shape
+        img = self.loaded_mask[mask_index]
+        if mask_data.native_size:
+            r_h, r_w, _ = img.shape
             scale = r_w / new_mask_width
             resized_mask = cv2.resize(
-                self.m_image,
+                img,
                 (int(new_mask_width), int(r_h / scale)),
                 interpolation=cv2.INTER_AREA,
             )
         else:
             resized_mask = cv2.resize(
-                self.m_image,
+                img,
                 (new_mask_width, new_mask_height),
                 interpolation=cv2.INTER_AREA,
             )
 
-        if self.m_rotate:
+        if mask_data.rotate:
             rotated_mask = self._rotate_z_axis(resized_mask, -angle_deg)
         else:
             rotated_mask = resized_mask
 
         m_h, m_w, _ = rotated_mask.shape
 
-        if self.m_place_on_point:
-            mask_x = int(m_center[0] - m_w + (int)(self.m_start_point_x / scale))
-            mask_y = int(m_center[1] - m_h + (int)(self.m_start_point_y / scale))
+        if mask_data.place_pivot == PlacePivot.Center:
+            mask_x = int(m_center[0] - m_w / 2 + (int)(mask_data.start_point_x / scale))
+            mask_y = int(m_center[1] - m_h / 2 + (int)(mask_data.start_point_y / scale))
+        elif mask_data.place_pivot == PlacePivot.Bottom:
+            mask_x = int(m_center[0] - m_w / 2 + (int)(mask_data.start_point_x / scale))
+            mask_y = int(m_center[1] + (int)(mask_data.start_point_y / scale))
         else:
-            mask_x = int(m_center[0] - m_w / 2 + (int)(self.m_start_point_x / scale))
-            mask_y = int(m_center[1] - m_h / 2 + (int)(self.m_start_point_y / scale))
+            mask_x = int(m_center[0] - m_w / 2 + (int)(mask_data.start_point_x / scale))
+            mask_y = int(m_center[1] - m_h + (int)(mask_data.start_point_y / scale))
 
         image = image_utils.overlay_transparent(image, rotated_mask, mask_x, mask_y)
 
@@ -176,36 +159,54 @@ class ImageMaskProcessor:
 
         if detection_result.face_landmarks:
             for face_landmarks in detection_result.face_landmarks:
-                m_left = self._get_landmark_coords(face_landmarks[self.m_left], w, h)
-                m_right = self._get_landmark_coords(face_landmarks[self.m_right], w, h)
-                m_top = self._get_landmark_coords(face_landmarks[self.m_top], w, h)
-                m_bottom = self._get_landmark_coords(
-                    face_landmarks[self.m_bottom], w, h
-                )
-                m_center = self._get_landmark_coords(
-                    face_landmarks[self.m_center], w, h
-                )
+                mask_index = 0
+                for mask_data in self.mask:
+                    m_left = self._get_landmark_coords(
+                        face_landmarks[mask_data.left], w, h
+                    )
+                    m_right = self._get_landmark_coords(
+                        face_landmarks[mask_data.right], w, h
+                    )
+                    m_top = self._get_landmark_coords(
+                        face_landmarks[mask_data.top], w, h
+                    )
+                    m_bottom = self._get_landmark_coords(
+                        face_landmarks[mask_data.bottom], w, h
+                    )
+                    m_center = self._get_landmark_coords(
+                        face_landmarks[mask_data.center], w, h
+                    )
 
-                new_mask_width = int(np.linalg.norm(m_left - m_right) * self.m_scale_w)
-                new_mask_height = int(np.linalg.norm(m_bottom - m_top) * self.m_scale_h)
+                    new_mask_width = int(
+                        np.linalg.norm(m_left - m_right) * mask_data.scale_w
+                    )
+                    new_mask_height = int(
+                        np.linalg.norm(m_bottom - m_top) * mask_data.scale_h
+                    )
 
-                if new_mask_width < 10 or new_mask_height < 10:
-                    continue
+                    if new_mask_width < 10 or new_mask_height < 10:
+                        continue
 
-                self._process_image(
-                    output_image,
-                    w,
-                    h,
-                    m_center,
-                    m_left,
-                    m_right,
-                    m_bottom,
-                    m_top,
-                    new_mask_width,
-                    new_mask_height,
-                )
+                    self._process_image(
+                        output_image,
+                        mask_data,
+                        mask_index,
+                        w,
+                        h,
+                        m_center,
+                        m_left,
+                        m_right,
+                        m_bottom,
+                        m_top,
+                        new_mask_width,
+                        new_mask_height,
+                    )
 
-                if self.show_face_points:
-                    self._show_face_points(face_landmarks, output_image, w, h)
+                    mask_index += 1
+
+                    if self.show_face_points:
+                        self._show_face_points(
+                            mask_data, face_landmarks, output_image, w, h
+                        )
 
         return output_image
