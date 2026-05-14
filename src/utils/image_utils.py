@@ -1,0 +1,67 @@
+import cv2
+import numpy as np
+
+
+def overlay_transparent(background, overlay, x=0, y=0, size=None):
+    if size:
+        overlay = cv2.resize(overlay, size, interpolation=cv2.INTER_AREA)
+
+    bg_h, bg_w = background.shape[:2]
+    o_h, o_w = overlay.shape[:2]
+
+    x1, y1 = max(x, 0), max(y, 0)
+    x2, y2 = min(x + o_w, bg_w), min(y + o_h, bg_h)
+
+    if x2 <= x1 or y2 <= y1:
+        return background
+
+    o_x1, o_y1 = x1 - x, y1 - y
+    o_x2, o_y2 = o_x1 + (x2 - x1), o_y1 + (y2 - y1)
+
+    overlay_crop = overlay[o_y1:o_y2, o_x1:o_x2]
+    overlay_img = overlay_crop[:, :, :3]
+    mask = (overlay_crop[:, :, 3] / 255.0)[:, :, np.newaxis].astype(np.float32)
+
+    bg_roi = background[y1:y2, x1:x2]
+    background[y1:y2, x1:x2] = (mask * overlay_img + (1.0 - mask) * bg_roi).astype(
+        np.uint8
+    )
+
+    return background
+
+
+def remove_green_color(image):
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    lower_green = np.array([35, 40, 40])
+    upper_green = np.array([85, 255, 255])
+
+    mask = cv2.inRange(hsv, lower_green, upper_green)
+
+    mask_inv = cv2.bitwise_not(mask)
+
+    result = cv2.bitwise_and(image, image, mask=mask_inv)
+
+    return result
+
+
+def replace_black_to_white(image):
+    img = image.copy()
+
+    black_pixels = np.where(
+        (img[:, :, 0] == 0) & (img[:, :, 1] == 0) & (img[:, :, 2] == 0)
+    )
+
+    img[black_pixels] = [255, 255, 255]
+
+    return img
+
+
+def replace_no_white_background(image, background):
+    white_mask = cv2.inRange(
+        image, np.array([255, 255, 255]), np.array([255, 255, 255])
+    )
+    mask_inv = cv2.bitwise_not(white_mask)
+    foreground = cv2.bitwise_and(image, image, mask=mask_inv)
+    bg_cut = cv2.bitwise_and(background, background, mask=white_mask)
+    return cv2.add(foreground, bg_cut)
