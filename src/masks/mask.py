@@ -7,6 +7,7 @@ from mediapipe.tasks.python import vision
 from ..paths import MASKS_DIR
 from ..utils import image_utils
 from typing import List
+from ..face_detection import *
 
 
 class ImageMaskProcessor:
@@ -48,7 +49,12 @@ class ImageMaskProcessor:
         asset_path = str(MASKS_DIR / "face_landmarker.task")
 
         base_options = python.BaseOptions(model_asset_path=asset_path)
-        options = vision.FaceLandmarkerOptions(base_options=base_options)
+        options = vision.FaceLandmarkerOptions(
+            base_options=base_options,
+            min_face_detection_confidence=0.1,
+            min_face_presence_confidence=0.1,
+            min_tracking_confidence=0.1,
+        )
 
         return vision.FaceLandmarker.create_from_options(options)
 
@@ -76,6 +82,16 @@ class ImageMaskProcessor:
 
     def _get_landmark_coords(self, face_landmarks, w, h):
         return np.array([face_landmarks.x * w, face_landmarks.y * h])
+
+    def _get_landmark_coords_with_bounding(
+        self, face_landmarks, w, h, bounding_box: BoundingBox
+    ):
+        return np.array(
+            [
+                face_landmarks.x * bounding_box.width + bounding_box.origin_x,
+                face_landmarks.y * bounding_box.height + bounding_box.origin_y,
+            ]
+        )
 
     def _calculate_angle(self, p_left, p_right):
         d_x = p_right[0] - p_left[0]
@@ -114,6 +130,47 @@ class ImageMaskProcessor:
             )
             index += 1
 
+    def _show_all_face_points(self, face_landmarks, image, w, h):
+        index = 0
+        for landmark in face_landmarks:
+            coords = self._get_landmark_coords(landmark, w, h)
+            point = (int(coords[0]), int(coords[1]))
+
+            cv2.circle(image, point, 2, (255, 0, 0), -1)
+            cv2.putText(
+                image,
+                str(index),
+                point,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.3,
+                (255, 255, 255),
+                1,
+            )
+            index += 1
+
+    def _show_all_face_points_with_face_data(
+        self, face_data: FaceDetectorData, face_landmarks, image, w, h
+    ):
+        index = 0
+        for landmark in face_landmarks:
+            coords = self._get_landmark_coords_with_bounding(landmark, w, h, face_data.bounding_box)
+            point = (
+                int(coords[0]),
+                int(coords[1]),
+            )
+
+            cv2.circle(image, point, 2, (255, 0, 0), -1)
+            cv2.putText(
+                image,
+                str(index),
+                point,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.3,
+                (255, 255, 255),
+                1,
+            )
+            index += 1
+
     def _process_image(
         self,
         image,
@@ -135,7 +192,7 @@ class ImageMaskProcessor:
         img = self.loaded_mask[mask_index].frames[frame_index]
         self.loaded_mask[mask_index].index += 1
 
-        if frame_index >= len(self.loaded_mask[mask_index].frames):
+        if len(self.loaded_mask[mask_index].frames) >= frame_index:
             self.loaded_mask[mask_index].index = 0
 
         if mask_data.native_size:
@@ -234,5 +291,102 @@ class ImageMaskProcessor:
                         self._show_face_points(
                             mask_data, face_landmarks, output_image, w, h
                         )
+
+        return output_image
+
+    def mask_image_face_detector(self, image, face_data: FaceDetectorData):
+        h, w, _ = image.shape
+
+        output_image = image
+
+        rgb_frame = cv2.cvtColor(face_data.source_image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+        detection_result = self.detector.detect(mp_image)
+
+        if detection_result.face_landmarks:
+            for face_landmarks in detection_result.face_landmarks:
+                mask_index = 0
+                for mask_data in self.mask:
+                    m_left = self._get_landmark_coords_with_bounding(
+                        face_landmarks[mask_data.left], w, h, face_data.bounding_box
+                    )
+                    m_right = self._get_landmark_coords_with_bounding(
+                        face_landmarks[mask_data.right], w, h, face_data.bounding_box
+                    )
+                    m_top = self._get_landmark_coords_with_bounding(
+                        face_landmarks[mask_data.top], w, h, face_data.bounding_box
+                    )
+                    m_bottom = self._get_landmark_coords_with_bounding(
+                        face_landmarks[mask_data.bottom], w, h, face_data.bounding_box
+                    )
+                    m_center = self._get_landmark_coords_with_bounding(
+                        face_landmarks[mask_data.center], w, h, face_data.bounding_box
+                    )
+
+                    new_mask_width = int(
+                        np.linalg.norm(m_left - m_right) * mask_data.scale_w
+                    )
+                    new_mask_height = int(
+                        np.linalg.norm(m_bottom - m_top) * mask_data.scale_h
+                    )
+
+                    if new_mask_width < 10 or new_mask_height < 10:
+                        mask_index += 1
+                        continue
+
+                    self._process_image(
+                        output_image,
+                        mask_data,
+                        mask_index,
+                        w,
+                        h,
+                        m_center,
+                        m_left,
+                        m_right,
+                        m_bottom,
+                        m_top,
+                        new_mask_width,
+                        new_mask_height,
+                    )
+
+                    mask_index += 1
+
+                    if self.show_face_points:
+                        self._show_face_points(
+                            mask_data, face_landmarks, output_image, w, h
+                        )
+
+        return output_image
+
+    def get_only_face_points(self, image):
+        h, w = image.shape[:2]
+
+        output_image = image
+
+        rgb_frame = cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+        detection_result = self.detector.detect(mp_image)
+
+        if detection_result.face_landmarks:
+            for face_landmarks in detection_result.face_landmarks:
+                self._show_face_points(face_landmarks, output_image, w, h)
+
+        return output_image
+
+    def get_only_face_points_face_data(self, image, face_data: FaceDetectorData):
+        h, w = image.shape[:2]
+
+        output_image = image
+
+        rgb_frame = cv2.cvtColor(face_data.source_image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+        detection_result = self.detector.detect(mp_image)
+
+        if detection_result.face_landmarks:
+            for face_landmarks in detection_result.face_landmarks:
+                self._show_all_face_points_with_face_data(face_data, face_landmarks, image, w, h)
 
         return output_image

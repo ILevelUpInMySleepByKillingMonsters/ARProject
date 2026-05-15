@@ -17,6 +17,8 @@ python -m src.compose.test_green
 python -m src.compose.test_image
 python -m src.compose.test_perfomance
 python -m src.compose.test_segment_mask
+python -m src.compose.test_quality
+python -m src.compose.test_long_face_point
 ```
 
 ## Masks
@@ -35,4 +37,9 @@ python -m src.masks.test_animated_mask
 python -m src.segmentation.test_background
 python -m src.segmentation.test_human
 python -m src.segmentation.test_segmentation
+```
+
+## Face Detector
+```bash
+python -m src.face_detection.test_detection
 ```
