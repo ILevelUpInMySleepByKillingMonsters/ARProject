@@ -1,23 +1,42 @@
 import cv2
-from .mask_config import MASK_CONFIGS, MaskConfigData, PlacePivot
+from .mask_config import *
 import numpy as np
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from ..paths import MASKS_DIR
 from ..utils import image_utils
+from typing import List
 
 
 class ImageMaskProcessor:
     def __init__(self, mask_name="test", show_face_points=False):
         mask = MASK_CONFIGS[mask_name]
 
-        loaded_mask = []
+        loaded_mask: List[MaskFrame] = []
 
         for mask_data in mask:
-            img = cv2.imread(str(MASKS_DIR / mask_data.file), cv2.IMREAD_UNCHANGED)
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
-            loaded_mask.append(img)
+            src = str(MASKS_DIR / mask_data.file)
+
+            if mask_data.animated:
+                cap = cv2.VideoCapture(src)
+                mask_frame = MaskFrame(index=0, frames=[])
+                while cap.isOpened():
+                    success, frame = cap.read()
+
+                    if not success:
+                        break
+
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2RGBA)
+                    frame = image_utils.replace_color_transparent(frame)
+                    mask_frame.frames.append(frame)
+
+                loaded_mask.append(mask_frame)
+            else:
+                img = cv2.imread(src, cv2.IMREAD_UNCHANGED)
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+                mask_frame = MaskFrame(index=0, frames=[img])
+                loaded_mask.append(mask_frame)
 
         self.loaded_mask = loaded_mask
         self.mask = mask
@@ -112,9 +131,15 @@ class ImageMaskProcessor:
     ):
         angle_deg = self._calculate_angle(m_left, m_right)
         scale = 1
-        img = self.loaded_mask[mask_index]
+        frame_index = self.loaded_mask[mask_index].index
+        img = self.loaded_mask[mask_index].frames[frame_index]
+        self.loaded_mask[mask_index].index += 1
+
+        if frame_index >= len(self.loaded_mask[mask_index].frames):
+            self.loaded_mask[mask_index].index = 0
+
         if mask_data.native_size:
-            r_h, r_w, _ = img.shape
+            r_h, r_w = img.shape[:2]
             scale = r_w / new_mask_width
             resized_mask = cv2.resize(
                 img,

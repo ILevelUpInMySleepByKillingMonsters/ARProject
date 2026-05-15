@@ -26,6 +26,12 @@ class MaskConfigData:
     animated: bool
 
 
+@dataclass()
+class MaskFrame:
+    index: int
+    frames: list
+
+
 MASK_CONFIGS: dict[str, list[MaskConfigData]] = {
     "test": [
         MaskConfigData(
@@ -111,6 +117,24 @@ MASK_CONFIGS: dict[str, list[MaskConfigData]] = {
             place_pivot=PlacePivot.Center,
             native_size=True,
             animated=False,
+        ),
+    ],
+    "dog-tongue": [
+        MaskConfigData(
+            file="masks/dog-tongue.gif",
+            left=127,
+            right=356,
+            top=9,
+            bottom=197,
+            center=168,
+            scale_h=1,
+            scale_w=1,
+            start_point_x=0,
+            start_point_y=0,
+            rotate=True,
+            place_pivot=PlacePivot.Center,
+            native_size=True,
+            animated=True,
         ),
     ],
 }

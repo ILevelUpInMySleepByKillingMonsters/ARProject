@@ -2,7 +2,7 @@ import cv2
 from ..paths import DATA_DIR
 from .mask import ImageMaskProcessor
 
-image_processor = ImageMaskProcessor("dog-tonque")
+image_processor = ImageMaskProcessor("dog-tongue")
 
 cap = cv2.VideoCapture(f"{DATA_DIR}/test-2.mp4")
 
