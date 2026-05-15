@@ -1,9 +1,23 @@
 import cv2
 import time
+import numpy as np
 from ..paths import DATA_DIR
 from ..segmentation import ImageSegmenterProcessor
 from ..masks import ImageMaskProcessor
 from ..utils import *
+
+
+def print_result(time_list, name):
+    time_list.sort()
+    avg_result = sum(time_list) / len(time_list)
+    max_result = max(time_list)
+    median_result = np.median(time_list)
+    print("-----")
+    print(f"avg {name} - {avg_result:.3f}, frame_rate: {1 / avg_result:.3f}")
+    print(f"max {name} - {max_result:.3f}, frame_rate: {1 / max_result:.3f}")
+    print(f"median {name} - {median_result:.3f}, frame_rate: {1 / median_result:.3f}")
+    print("-----")
+
 
 image_mask_processor = ImageMaskProcessor()
 image_segment_processor = ImageSegmenterProcessor()
@@ -37,9 +51,11 @@ while cap.isOpened():
     get_segmentation_list.append(elapsed_time)
 
     start_process_background_time = time.perf_counter()
-    
+
     background = image_utils.replace_no_white_background(human, new_bg)
-    elapsed_time = time_utils.show_elapsed_time(start_process_background_time, "process_background")
+    elapsed_time = time_utils.show_elapsed_time(
+        start_process_background_time, "process_background"
+    )
     process_background_list.append(elapsed_time)
 
     start_mask_image_time = time.perf_counter()
@@ -59,12 +75,7 @@ while cap.isOpened():
     if key == 27:
         break
 
-average_one_frame_process_list = sum(one_frame_process_list) / len(one_frame_process_list)
-average_get_segmentation_list = sum(get_segmentation_list) / len(get_segmentation_list)
-average_process_background_list = sum(process_background_list) / len(process_background_list)
-average_mask_image_list = sum(mask_image_list) / len(mask_image_list)
-
-print(f"avg segment - {average_get_segmentation_list:.3f}, frame_rate: {1 / average_get_segmentation_list:.3f}")
-print(f"avg background - {average_process_background_list:.3f}, frame_rate: {1 / average_process_background_list:.3f}")
-print(f"avg mask - {average_mask_image_list:.3f}, frame_rate: {1 / average_mask_image_list:.3f}")
-print(f"avg one frame process - {average_one_frame_process_list:.3f}, frame_rate: {1 / average_one_frame_process_list:.3f}")
+print_result(get_segmentation_list, "segment")
+print_result(process_background_list, "background")
+print_result(mask_image_list, "mask")
+print_result(one_frame_process_list, "one frame process")
