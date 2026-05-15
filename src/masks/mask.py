@@ -185,6 +185,7 @@ class ImageMaskProcessor:
                     )
 
                     if new_mask_width < 10 or new_mask_height < 10:
+                        mask_index += 1
                         continue
 
                     self._process_image(
