@@ -11,7 +11,8 @@ face_detector = ImageFaceDetectorProcessor()
 
 cap = cv2.VideoCapture(f"{DATA_DIR}/egon-video.mp4")
 bg_video = cv2.VideoCapture(f"{DATA_DIR}/slav_fest.mp4")
-
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+first_frame = True
 while cap.isOpened():
     success, frame = cap.read()
     success_bg, bg_frame = bg_video.read()
@@ -23,14 +24,21 @@ while cap.isOpened():
         bg_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
         continue
 
+
+    if first_frame:
+        h, w = frame.shape[:2]
+        out = cv2.VideoWriter('output4.mp4', fourcc, 20.0, (w, h))
+        first_frame = False
+
     bg_frame = image_utils.match_background_size(frame, bg_frame)
 
     background, human = image_segment_processor.get_segmentation(frame)
     background = image_utils.replace_no_white_background(human, bg_frame)
-
+    
     face_data = face_detector.detect(human)
     mask = image_mask_processor.mask_image_face_detector(background, face_data)
+    
+    out.write(mask)
 
-    cv2.imshow("Mask", mask)
-    if cv2.waitKey(1) == 27:
-        break
+out.release()
+print("done")

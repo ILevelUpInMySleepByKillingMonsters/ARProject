@@ -3,7 +3,7 @@
 https://ai.google.dev/edge/mediapipe/solutions/guide
 
 ```bash
-pip install-r requerements.txt
+pip install -r requirements.txt
 ```
 
 # Сommand

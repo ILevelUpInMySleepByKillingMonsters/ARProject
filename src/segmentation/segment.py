@@ -21,7 +21,7 @@ class ImageSegmenterProcessor:
         asset_path = f"{SEGMENTATION_DIR}/selfie_segmenter.tflite"
         base_options = python.BaseOptions(model_asset_path=asset_path)
         options = vision.ImageSegmenterOptions(
-            base_options=base_options, output_category_mask=True
+            base_options=base_options, output_category_mask=True, output_confidence_masks=False,
         )
 
         return vision.ImageSegmenter.create_from_options(options)
@@ -34,7 +34,7 @@ class ImageSegmenterProcessor:
 
         mask = np.where(condition[..., None], self.fg_image, self.bg_image)
 
-        _, thresh = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
         return thresh
 
     def set_buffer(self, image):

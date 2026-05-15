@@ -192,7 +192,7 @@ class ImageMaskProcessor:
         img = self.loaded_mask[mask_index].frames[frame_index]
         self.loaded_mask[mask_index].index += 1
 
-        if len(self.loaded_mask[mask_index].frames) >= frame_index:
+        if self.loaded_mask[mask_index].index >= len(self.loaded_mask[mask_index].frames):
             self.loaded_mask[mask_index].index = 0
 
         if mask_data.native_size:
@@ -230,7 +230,7 @@ class ImageMaskProcessor:
         image = image_utils.overlay_transparent(image, rotated_mask, mask_x, mask_y)
 
     def mask_image(self, image):
-        h, w, _ = image.shape
+        h, w = image.shape[:2]
 
         output_image = image
 
@@ -371,7 +371,7 @@ class ImageMaskProcessor:
 
         if detection_result.face_landmarks:
             for face_landmarks in detection_result.face_landmarks:
-                self._show_face_points(face_landmarks, output_image, w, h)
+                self._show_all_face_points(face_landmarks, output_image, w, h)
 
         return output_image
 
