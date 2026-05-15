@@ -11,6 +11,7 @@ pip install-r requerements.txt
 ## Compose
 
 ```bash
+python -m src.compose.test_background_video
 python -m src.compose.test_background
 python -m src.compose.test_green
 python -m src.compose.test_image

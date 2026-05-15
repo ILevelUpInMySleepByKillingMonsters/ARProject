@@ -72,3 +72,18 @@ def replace_color_transparent(image, color=[255, 255, 255]):
     white_mask = np.all(img_copy[:, :, :3] == color, axis=-1)
     img_copy[white_mask, 3] = 0
     return img_copy
+
+
+def match_background_size(original, mathed):
+    h, w = original.shape[:2]
+    bg_h, bg_w = mathed.shape[:2]
+
+    scale = max(w / bg_w, h / bg_h)
+    new_w = int(bg_w * scale)
+    new_h = int(bg_h * scale)
+    bg_frame_resized = cv2.resize(mathed, (new_w, new_h))
+
+    start_y = (new_h - h) // 2
+    start_x = (new_w - w) // 2
+
+    return bg_frame_resized[start_y : start_y + h, start_x : start_x + w]

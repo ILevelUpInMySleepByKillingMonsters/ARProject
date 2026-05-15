@@ -42,7 +42,7 @@ while cap.isOpened():
     start_time = time.perf_counter()
 
     # start_resize_time = time.perf_counter()
-    new_bg = cv2.resize(bg, (frame.shape[1], frame.shape[0]))
+    new_bg = image_utils.match_background_size(frame, bg)
     # time_utils.show_elapsed_time(start_resize_time, "resize")
 
     start_segment_time = time.perf_counter()

@@ -10,7 +10,7 @@ image_segment_processor = ImageSegmenterProcessor()
 img = cv2.imread(f"{DATA_DIR}/photo-egon.jpg")
 bg = cv2.imread(f"{DATA_DIR}/vitebsk.jpg")
 
-new_bg = cv2.resize(bg, (img.shape[1], img.shape[0]))
+new_bg = image_utils.match_background_size(img, bg)
 
 background, human = image_segment_processor.get_segmentation(img)
 
