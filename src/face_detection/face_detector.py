@@ -1,7 +1,7 @@
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from ..paths import FACE_DETECTION
+from ..paths import FACE_DETECTION_DIR
 from .face_detector_config import *
 
 
@@ -11,7 +11,7 @@ class ImageFaceDetectorProcessor:
         self.detector = self._get_segmenter()
 
     def _get_segmenter(self):
-        asset_path = f"{FACE_DETECTION}/blaze_face_full_range_sparse.tflite"
+        asset_path = f"{FACE_DETECTION_DIR}/blaze_face_full_range_sparse.tflite"
         base_options = python.BaseOptions(model_asset_path=asset_path)
         options = vision.FaceDetectorOptions(base_options=base_options)
 

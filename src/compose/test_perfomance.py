@@ -63,13 +63,12 @@ while cap.isOpened():
     elapsed_time = time_utils.show_elapsed_time(start_mask_image_time, "mask_image")
     mask_image_list.append(elapsed_time)
 
-    cv2.imshow("Mask", mask)
-
     elapsed_time = time_utils.show_elapsed_time(start_time, "one_frame_process")
+    one_frame_process_list.append(elapsed_time)
 
     print()
 
-    one_frame_process_list.append(elapsed_time)
+    cv2.imshow("Mask", mask)
 
     key = cv2.waitKey(1)
     if key == 27:
