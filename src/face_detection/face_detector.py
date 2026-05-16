@@ -1,6 +1,4 @@
-import cv2
 import mediapipe as mp
-import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from ..paths import FACE_DETECTION
@@ -8,14 +6,8 @@ from .face_detector_config import *
 
 
 class ImageFaceDetectorProcessor:
-    DEFAULT_MASK_COLOR = (255, 255, 255)
-    DEFAULT_BG_COLOR = (0, 0, 0)
 
-    def __init__(self, mask_color=None, bg_color=None):
-        self.fg_image = None
-        self.bg_image = None
-        self.mask_color = mask_color or self.DEFAULT_MASK_COLOR
-        self.bg_color = bg_color or self.DEFAULT_BG_COLOR
+    def __init__(self):
         self.detector = self._get_segmenter()
 
     def _get_segmenter(self):
@@ -29,7 +21,7 @@ class ImageFaceDetectorProcessor:
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
         face_detector_result = self.detector.detect(mp_image)
 
-        face_data = FaceDetectorData(source_image=image)
+        face_data = None
 
         if face_detector_result:
             for detection in face_detector_result.detections:
@@ -47,6 +39,8 @@ class ImageFaceDetectorProcessor:
                 # rect = cv2.rectangle(image, (origin_x, origin_y), (x2, y2), color, thickness)
 
                 rect = image[origin_y:y2, origin_x:x2]
+
+                face_data = FaceDetectorData(rect)
                 face_data.source_image = rect
                 face_data.bounding_box = bounding_box
 

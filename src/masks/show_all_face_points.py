@@ -54,6 +54,7 @@ def show_face_points():
                 index += 1
 
             cv2.imshow("Face Points", result)
+            cv2.waitKey(1000)
 
     detector.close()
 

@@ -30,12 +30,7 @@ class ImageSegmenterProcessor:
         segmentation_result = self.segmenter.segment(new_image)
         category_mask = segmentation_result.category_mask
 
-        condition = category_mask.numpy_view().squeeze(-1) > 0.2
-
-        mask = np.where(condition[..., None], self.fg_image, self.bg_image)
-
-        _, thresh = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
-        return thresh
+        return category_mask.numpy_view()
 
     def set_buffer(self, image):
         new_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
@@ -86,14 +81,14 @@ class ImageSegmenterProcessor:
 
         _, thresh = cv2.threshold(smoothed_mask, 127, 255, cv2.THRESH_BINARY)
 
-        lower = (200, 200, 200)
-        upper = (255, 255, 255)
-        thresh = cv2.inRange(thresh, lower, upper)
+        # lower = (200, 200, 200)
+        # upper = (255, 255, 255)
+        # thresh = cv2.inRange(thresh, lower, upper)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+        # thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+        # thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-        thresh = cv2.cvtColor(thresh, cv2.COLOR_BGRA2BGR)
+        thresh = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
 
         return thresh
