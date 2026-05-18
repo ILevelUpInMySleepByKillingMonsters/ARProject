@@ -55,5 +55,6 @@ python -m src.segmentation.test_segmentation
 
 ```bash
 python -m src.video_writer.test_quality_writer
+python -m src.video_writer.test_video_compress
 python -m src.video_writer.test_video_writer
 ```

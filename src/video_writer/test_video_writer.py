@@ -13,7 +13,7 @@ image_segment_processor = ImageSegmenterProcessor()
 face_detector = ImageFaceDetectorProcessor()
 
 cap = cv2.VideoCapture(f"{DATA_DIR}/egon-video.mp4")
-bg_video = cv2.VideoCapture(f"{DATA_DIR}/slav_fest.mp4")
+bg_video = cv2.VideoCapture(f"{DATA_DIR}/slav-fest.mp4")
 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 first_frame = True
 
