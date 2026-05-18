@@ -21,7 +21,9 @@ class ImageSegmenterProcessor:
         asset_path = f"{SEGMENTATION_DIR}/selfie_segmenter.tflite"
         base_options = python.BaseOptions(model_asset_path=asset_path)
         options = vision.ImageSegmenterOptions(
-            base_options=base_options, output_category_mask=True, output_confidence_masks=False,
+            base_options=base_options,
+            output_category_mask=True,
+            output_confidence_masks=False,
         )
 
         return vision.ImageSegmenter.create_from_options(options)
@@ -65,7 +67,8 @@ class ImageSegmenterProcessor:
     def get_segmentation(self, image):
         h, w = image.shape[:2]
 
-        res_image = cv2.resize(image, (256, 256), interpolation=cv2.INTER_NEAREST)
+        # res_image = cv2.resize(image, (256, 256), interpolation=cv2.INTER_NEAREST)
+        res_image = cv2.resize(image, (w, h), interpolation=cv2.INTER_NEAREST)
         self.set_buffer_if_none(res_image)
 
         new_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=res_image)
@@ -77,7 +80,8 @@ class ImageSegmenterProcessor:
     def improve_thresh(self, thresh, w, h):
         thresh = cv2.resize(thresh, (w, h), interpolation=cv2.INTER_LINEAR)
 
-        smoothed_mask = cv2.GaussianBlur(thresh, (5, 5), 0)
+        # smoothed_mask = cv2.GaussianBlur(thresh, (5, 5), 0)
+        smoothed_mask = cv2.stackBlur(thresh, (51, 51))
 
         _, thresh = cv2.threshold(smoothed_mask, 127, 255, cv2.THRESH_BINARY)
 

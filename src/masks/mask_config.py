@@ -22,8 +22,9 @@ class MaskConfigData:
     start_point_y: int
     rotate: bool
     place_pivot: PlacePivot
-    native_size: bool
-    animated: bool
+    native_size: bool = False
+    animated: bool = False
+    is_fixed: bool = False
 
 
 @dataclass()
@@ -153,6 +154,23 @@ MASK_CONFIGS: dict[str, list[MaskConfigData]] = {
             place_pivot=PlacePivot.Top,
             native_size=True,
             animated=True,
+        ),
+        MaskConfigData(
+            file="masks/bel-flag.gif",
+            left=127,
+            right=356,
+            top=9,
+            bottom=197,
+            center=0,
+            scale_h=1,
+            scale_w=3,
+            start_point_x=0,
+            start_point_y=0,
+            rotate=True,
+            place_pivot=PlacePivot.Bottom,
+            native_size=True,
+            animated=True,
+            is_fixed=True,
         ),
     ],
 }

@@ -5,6 +5,7 @@ from ..paths import DATA_DIR
 from ..segmentation import ImageSegmenterProcessor
 from ..masks import ImageMaskProcessor
 from ..utils import *
+from ..face_detection import ImageFaceDetectorProcessor
 
 
 def print_result(time_list, name):
@@ -19,16 +20,18 @@ def print_result(time_list, name):
     print("-----")
 
 
-image_mask_processor = ImageMaskProcessor()
+image_mask_processor = ImageMaskProcessor("3d_text")
 image_segment_processor = ImageSegmenterProcessor()
+face_detector = ImageFaceDetectorProcessor()
 
-cap = cv2.VideoCapture(f"{DATA_DIR}/test-2.mp4")
+cap = cv2.VideoCapture(f"{DATA_DIR}/egon-video.mp4")
 bg = cv2.imread(f"{DATA_DIR}/vitebsk.jpg")
 
 one_frame_process_list = []
 get_segmentation_list = []
 process_background_list = []
 mask_image_list = []
+face_detector_list = []
 
 index = 0
 while cap.isOpened():
@@ -51,15 +54,21 @@ while cap.isOpened():
     get_segmentation_list.append(elapsed_time)
 
     start_process_background_time = time.perf_counter()
-
     background = image_utils.replace_no_white_background(human, new_bg)
     elapsed_time = time_utils.show_elapsed_time(
         start_process_background_time, "process_background"
     )
     process_background_list.append(elapsed_time)
 
+    start_face_detector_time = time.perf_counter()
+    face_data = face_detector.detect(human)
+    elapsed_time = time_utils.show_elapsed_time(
+        start_face_detector_time, "face_detector"
+    )
+    face_detector_list.append(elapsed_time)
+
     start_mask_image_time = time.perf_counter()
-    mask = image_mask_processor.mask_image(background)
+    mask = image_mask_processor.mask_image(background, face_data)
     elapsed_time = time_utils.show_elapsed_time(start_mask_image_time, "mask_image")
     mask_image_list.append(elapsed_time)
 
@@ -76,5 +85,6 @@ while cap.isOpened():
 
 print_result(get_segmentation_list, "segment")
 print_result(process_background_list, "background")
+print_result(face_detector_list, "face_detector")
 print_result(mask_image_list, "mask")
 print_result(one_frame_process_list, "one frame process")

@@ -79,8 +79,14 @@ def match_background_size(original, mathed):
     bg_h, bg_w = mathed.shape[:2]
 
     scale = max(w / bg_w, h / bg_h)
-    new_w = int(bg_w * scale)
-    new_h = int(bg_h * scale)
+
+    if w / bg_w >= h / bg_h:
+        new_w = w
+        new_h = int(bg_h * scale)
+    else:
+        new_w = int(bg_w * scale)
+        new_h = h
+
     bg_frame_resized = cv2.resize(mathed, (new_w, new_h))
 
     start_y = (new_h - h) // 2

@@ -216,6 +216,30 @@ class ImageMaskProcessor:
             for face_landmarks in detection_result.face_landmarks:
                 mask_index = 0
                 for mask_data in self.mask:
+                    if mask_data.is_fixed:
+                        frame_index = self.loaded_mask[mask_index].index
+                        img = self.loaded_mask[mask_index].frames[frame_index]
+                        self.loaded_mask[mask_index].index += 1
+
+                        if self.loaded_mask[mask_index].index >= len(
+                            self.loaded_mask[mask_index].frames
+                        ):
+                            self.loaded_mask[mask_index].index = 0
+                        m_h, m_w, _ = img.shape
+
+                        if mask_data.place_pivot == PlacePivot.Center:
+                            output_image = image_utils.overlay_transparent(
+                                image, img, int(w / 2), int(h / 2)
+                            )
+                        elif mask_data.place_pivot == PlacePivot.Bottom:
+                            output_image = image_utils.overlay_transparent(
+                                image, img, 0, h - m_h
+                            )
+                        else:
+                            output_image = image_utils.overlay_transparent(image, img)
+
+                        continue
+
                     m_left = self._get_landmark_coords(
                         face_landmarks[mask_data.left], w, h, face_data
                     )
