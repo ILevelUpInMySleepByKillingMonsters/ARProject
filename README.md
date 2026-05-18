@@ -16,6 +16,7 @@ python -m src.compose.test_background
 python -m src.compose.test_green
 python -m src.compose.test_image
 python -m src.compose.test_long_distance_face_point_detection
+python -m src.compose.test_perfomance_profiler
 python -m src.compose.test_perfomance
 python -m src.compose.test_segment_mask
 ```
@@ -31,7 +32,6 @@ python -m src.face_detection.test_detection
 ```bash
 python -m src.masks.show_all_face_points
 python -m src.masks.show_face_points
-python -m src.masks.test_mask
 python -m src.masks.test_animated_mask
 python -m src.masks.test_image_mask
 python -m src.masks.test_mask

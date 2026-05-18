@@ -68,7 +68,7 @@ class ImageSegmenterProcessor:
         h, w = image.shape[:2]
 
         # res_image = cv2.resize(image, (256, 256), interpolation=cv2.INTER_NEAREST)
-        res_image = cv2.resize(image, (w, h), interpolation=cv2.INTER_NEAREST)
+        res_image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_NEAREST)
         self.set_buffer_if_none(res_image)
 
         new_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=res_image)
