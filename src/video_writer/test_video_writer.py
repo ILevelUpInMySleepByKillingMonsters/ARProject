@@ -21,7 +21,7 @@ progress = 0
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
 out_format = ".mp4"
-out_name = f"test-quality-{str(uuid.uuid4())}"
+out_name = f"test-video-{str(uuid.uuid4())}"
 out_src = f"{OUTPUT_DIR}/{out_name}{out_format}"
 
 total_time = time.perf_counter()
@@ -39,7 +39,7 @@ while cap.isOpened():
 
     if first_frame:
         h, w = frame.shape[:2]
-        out = cv2.VideoWriter(out_src + out_format, fourcc, 24.0, (w, h))
+        out = cv2.VideoWriter(out_src, fourcc, 24.0, (w, h))
         first_frame = False
 
     bg_frame = image_utils.match_background_size(frame, bg_frame)
