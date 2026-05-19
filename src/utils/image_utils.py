@@ -57,6 +57,13 @@ def replace_black_to_white(image):
     return img
 
 
+def overlay_background(image, background, mask):
+    mask_inv = cv2.bitwise_not(mask)
+    foreground = cv2.bitwise_and(image, image, mask=mask_inv)
+    bg_cut = cv2.bitwise_and(background, background, mask=mask)
+    return cv2.add(foreground, bg_cut)
+
+
 def replace_no_white_background(image, background):
     white_mask = cv2.inRange(
         image, np.array([255, 255, 255]), np.array([255, 255, 255])

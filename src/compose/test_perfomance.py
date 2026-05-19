@@ -49,12 +49,12 @@ while cap.isOpened():
     # time_utils.show_elapsed_time(start_resize_time, "resize")
 
     start_segment_time = time.perf_counter()
-    background, human = image_segment_processor.get_segmentation(frame)
+    background, human, segment_mask = image_segment_processor.get_segmentation(frame)
     elapsed_time = time_utils.show_elapsed_time(start_segment_time, "get_segmentation")
     get_segmentation_list.append(elapsed_time)
 
     start_process_background_time = time.perf_counter()
-    background = image_utils.replace_no_white_background(human, new_bg)
+    background = image_utils.overlay_background(human, new_bg, segment_mask)
     elapsed_time = time_utils.show_elapsed_time(
         start_process_background_time, "process_background"
     )

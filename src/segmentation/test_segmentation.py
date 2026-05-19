@@ -11,9 +11,10 @@ while cap.isOpened():
     if not success:
         break
 
-    background, human = image_processor.get_segmentation(frame)
+    background, human, segment_mask = image_processor.get_segmentation(frame)
     cv2.imshow("Background", background)
     cv2.imshow("Human", human)
+    cv2.imshow("Mask", segment_mask)
 
     key = cv2.waitKey(1)
     if key == 27:

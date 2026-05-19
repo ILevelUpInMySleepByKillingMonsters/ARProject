@@ -51,8 +51,8 @@ class ImageSegmenterProcessor:
         thresh = self._generate_mask(new_image)
 
         h, w = image.shape[:2]
-        thresh = self.improve_thresh(thresh, w, h)
-        return cv2.bitwise_or(thresh, image)
+        _, bgr = self.improve_thresh(thresh, w, h)
+        return cv2.bitwise_or(bgr, image)
 
     def get_background(self, image):
         self.set_buffer_if_none(image)
@@ -61,8 +61,8 @@ class ImageSegmenterProcessor:
         thresh = self._generate_mask(new_image)
 
         h, w = image.shape[:2]
-        thresh = self.improve_thresh(thresh, w, h)
-        return cv2.bitwise_and(thresh, image)
+        _, bgr = self.improve_thresh(thresh, w, h)
+        return cv2.bitwise_and(bgr, image)
 
     def get_segmentation(self, image):
         h, w = image.shape[:2]
@@ -71,11 +71,12 @@ class ImageSegmenterProcessor:
         res_image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_NEAREST)
         self.set_buffer_if_none(res_image)
 
-        new_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=res_image)
-        thresh = self._generate_mask(new_image)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=res_image)
 
-        thresh = self.improve_thresh(thresh, w, h)
-        return cv2.bitwise_and(thresh, image), cv2.bitwise_or(thresh, image)
+        segment_mask = self._generate_mask(mp_image)
+        segment_mask, bgr = self.improve_thresh(segment_mask, w, h)
+
+        return cv2.bitwise_and(bgr, image), cv2.bitwise_or(bgr, image), segment_mask
 
     def improve_thresh(self, thresh, w, h):
         thresh = cv2.resize(thresh, (w, h), interpolation=cv2.INTER_LINEAR)
@@ -93,6 +94,6 @@ class ImageSegmenterProcessor:
         # thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
         # thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-        thresh = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+        bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
 
-        return thresh
+        return thresh, bgr

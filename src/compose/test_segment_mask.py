@@ -14,7 +14,7 @@ while cap.isOpened():
     if not success:
         break
 
-    background, human = image_segment_processor.get_segmentation(frame)
+    background, human, _ = image_segment_processor.get_segmentation(frame)
     mask = image_mask_processor.mask_image(human)
 
     cv2.imshow("Mask", mask)

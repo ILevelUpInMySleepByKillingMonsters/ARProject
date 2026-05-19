@@ -12,9 +12,9 @@ bg = cv2.imread(f"{DATA_DIR}/vitebsk.jpg")
 
 new_bg = image_utils.match_background_size(img, bg)
 
-background, human = image_segment_processor.get_segmentation(img)
+background, human, segment_mask = image_segment_processor.get_segmentation(img)
 
-background = image_utils.replace_no_white_background(human, new_bg)
+background = image_utils.overlay_background(human, new_bg, segment_mask)
 
 output = image_mask_processor.mask_image(background)
 cv2.imshow("Mask", output)

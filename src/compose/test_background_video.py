@@ -20,8 +20,8 @@ while cap.isOpened():
 
     bg_frame = image_utils.match_background_size(frame, bg_frame)
 
-    background, human = image_segment_processor.get_segmentation(frame)
-    background = image_utils.replace_no_white_background(human, bg_frame)
+    background, human, segment_mask = image_segment_processor.get_segmentation(frame)
+    background = image_utils.overlay_background(human, bg_frame, segment_mask)
 
     cv2.imshow("Mask", background)
 
