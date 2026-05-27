@@ -29,7 +29,7 @@ class ImageMaskProcessor:
                         break
 
                     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2RGBA)
-                    frame = image_utils.replace_color_transparent(frame)
+                    frame = image_utils.replace_color_to_transparent(frame)
                     mask_frame.frames.append(frame)
 
                 loaded_mask.append(mask_frame)

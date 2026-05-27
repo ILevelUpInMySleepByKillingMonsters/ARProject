@@ -39,7 +39,7 @@ def remove_green_color(image):
     mask = cv2.inRange(hsv, lower_green, upper_green)
 
     mask_inv = cv2.bitwise_not(mask)
-
+    mask_inv = cv2.medianBlur(mask_inv, 9)
     result = cv2.bitwise_and(image, image, mask=mask_inv)
 
     return result
@@ -74,10 +74,22 @@ def replace_no_white_background(image, background):
     return cv2.add(foreground, bg_cut)
 
 
-def replace_color_transparent(image, color=[255, 255, 255]):
+def replace_color_to_transparent(image, color=[255, 255, 255]):
     img_copy = image.copy()
+
+    if img_copy.shape[2] == 3:
+        img_copy = cv2.cvtColor(img_copy, cv2.COLOR_BGR2BGRA)
+
     white_mask = np.all(img_copy[:, :, :3] == color, axis=-1)
     img_copy[white_mask, 3] = 0
+    return img_copy
+
+
+def replace_color_to_color(image, color_from=[255, 255, 255], color_out=[0, 255, 0]):
+    img_copy = image.copy()
+
+    white_mask = np.all(img_copy[:, :, :3] == color_from, axis=-1)
+    img_copy[white_mask] = color_out
     return img_copy
 
 
@@ -100,3 +112,15 @@ def match_background_size(original, mathed):
     start_x = (new_w - w) // 2
 
     return bg_frame_resized[start_y : start_y + h, start_x : start_x + w]
+
+
+def resize_to(original, mathed):
+    h, w = original.shape[:2]
+    m_h, m_w = mathed.shape[:2]
+
+    scale = min(w / m_w, h / m_h)
+
+    new_h = int(m_h * scale)
+    new_w = int(m_w * scale)
+
+    return cv2.resize(mathed, (new_w, new_h))

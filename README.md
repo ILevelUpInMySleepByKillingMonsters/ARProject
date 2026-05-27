@@ -35,6 +35,7 @@ python -m src.masks.show_face_points
 python -m src.masks.test_animated_mask
 python -m src.masks.test_image_mask
 python -m src.masks.test_mask
+python -m src.masks.test_masker
 ```
 
 ## Quality segmentation
